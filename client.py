@@ -17,9 +17,6 @@ ENCODING = "utf8"
 MESSAGE_SOUND = "sounds/message.wav"
 MENTION_SOUND = "sounds/mention.wav"
 
-DEFAULT_FONT = "Consolas 14"
-DEFAULT_COLOR = "white"
-
 
 # Determine if notification sounds can be played
 # TODO cross-platform
@@ -31,43 +28,6 @@ if on_windows:
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 
-# Styles
-# TODO roll this into a new class or App
-app_config = {
-    "bg": "#111",
-    "padx": 10,
-    "pady": 8
-}
-
-label_config = {
-    "bg": app_config["bg"],
-    "fg": DEFAULT_COLOR,
-    "font": DEFAULT_FONT,
-}
-
-text_entry_config = {
-    "bg": "#222",
-    "fg": DEFAULT_COLOR,
-    "insertbackground": "#FFF",
-    "font": DEFAULT_FONT,
-    "padx": app_config["padx"],
-    "pady": app_config["pady"],
-    "wrap": WORD,
-}
-
-text_config = {
-    "bg": app_config["bg"],
-    "fg": DEFAULT_COLOR,
-    "insertbackground": app_config["bg"],
-    "font": DEFAULT_FONT,
-    "padx": app_config["padx"],
-    "pady": app_config["pady"],
-    "wrap": WORD,
-    "spacing3": 4,
-    "state": DISABLED,
-}
-
-
 class App(Tk):
     """
     An `App` has an associated `ServerManager` and is the top-level object of the client.
@@ -75,10 +35,41 @@ class App(Tk):
     You can supply any keyword arguments that `Tk` accepts.
     """
 
+    default_color = "white"
+    default_font = "Consolas 14"
+
     app_config = {
         "bg": "#111",
         "padx": 10,
         "pady": 8
+    }
+
+    label_config = {
+        "bg": app_config["bg"],
+        "fg": default_color,
+        "font": default_font,
+    }
+
+    text_entry_config = {
+        "bg": "#222",
+        "fg": default_color,
+        "insertbackground": "#FFF",
+        "font": default_font,
+        "padx": app_config["padx"],
+        "pady": app_config["pady"],
+        "wrap": WORD,
+    }
+
+    text_config = {
+        "bg": app_config["bg"],
+        "fg": default_color,
+        "insertbackground": app_config["bg"],
+        "font": default_font,
+        "padx": app_config["padx"],
+        "pady": app_config["pady"],
+        "wrap": WORD,
+        "spacing3": 4,
+        "state": DISABLED,
     }
 
     def __init__(self, sm_name="anon", sm_server="tk.hazel.cafe", sm_notify=True, **kwargs):
@@ -98,13 +89,13 @@ class ServerManager:
         self.default_notify = notify
         self.servers = {}
 
-        self.name_label = Label(**label_config, text="Name")
-        self.name_entry = Text(**text_entry_config, width=30, height=1)
+        self.name_label = Label(**app.label_config, text="Name")
+        self.name_entry = Text(**app.text_entry_config, width=30, height=1)
         self.name_entry.insert(START, name)
         self.name_entry.bind(RETURN_KEY, self._enter_server)
 
-        self.server_label = Label(**label_config, text="Server")
-        self.server_entry = Text(**text_entry_config, width=30, height=1)
+        self.server_label = Label(**app.label_config, text="Server")
+        self.server_entry = Text(**app.text_entry_config, width=30, height=1)
         self.server_entry.insert(START, host)
         self.server_entry.bind(RETURN_KEY, self._enter_server)
 
@@ -168,8 +159,8 @@ class Server:
         self.port = port
         self.notify = notify
 
-        self.chat_log = Text(**text_config)
-        self.message_entry = Text(**text_entry_config, height=3)
+        self.chat_log = Text(**app.text_config)
+        self.message_entry = Text(**app.text_entry_config, height=3)
 
         self.chat_log.bind(ANY_KEY, self._enter_key)
         self.chat_log.bind(RETURN_KEY, self._enter_message)
