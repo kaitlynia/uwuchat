@@ -2,19 +2,19 @@
 A chat application written in Python with tkinter
 
 ### Goals
-- Have no dependencies (besides Python and it's standard lib of course)
-- Single threaded concurrency in the client and server
-- Stateful client API with GUI "baked in"
-- Use JSON "stanzas" in a formal specification
-- E2E encryption OR implement OMEMO encryption
+- Have no dependencies (besides Python and its standard library of course)
+- Utilize single threaded concurrency for the client and the server
+- Offer stateful client API with GUI "baked in"
+- Design JSON "stanzas" as a formal specification
+- Implement E2E or OMEMO encryption
 
 ### Non-goals
-- Be discriminately efficient
-- Federation (this may change in the future)
+- Be strictly efficient
+- Federate with other servers (this may change in the future)
 
 ### Installation
 
-Python **3.8** is required for both the client and server to function.
+Python **3.8+** is required.
 
-If Python 3.8 is still a pre-release at the time of reading, please download it here:
+While Python 3.8 is still in beta, download this release:
 https://www.python.org/downloads/release/python-380b3/
