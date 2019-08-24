@@ -1,5 +1,6 @@
 from tkinter import *
 import asyncio
+from asyncio.exceptions import *
 import os
 
 
@@ -160,10 +161,11 @@ class Server:
         self.notify = notify
 
         self.chat_log = Text(**app.text_config)
-        self.message_entry = Text(**app.text_entry_config, height=3)
-
         self.chat_log.bind(ANY_KEY, self._enter_key)
         self.chat_log.bind(RETURN_KEY, self._enter_message)
+        self.chat_log.tag_config("status", bg="#888")
+
+        self.message_entry = Text(**app.text_entry_config, height=3)
         self.message_entry.bind(SHIFT_RETURN, self._enter_key)
         self.message_entry.bind(RETURN_KEY, self._enter_message)
 
@@ -190,6 +192,12 @@ class Server:
         if message:
             self._send_queue.put_nowait(f"{self.name}: {message}\n")
         self.app.after_idle(self.message_entry.delete, START, END)
+
+    def _status(self, message):
+        self.chat_log.config(state=NORMAL)
+        self.chat_log.insert(END, message, "status")
+        self.chat_log.config(state=DISABLED)
+        self.chat_log.see(END)
 
     def _handle_message(self, message):
         """
@@ -232,6 +240,14 @@ class Server:
                 await self._stream.write((await self._send_queue.get()).encode(ENCODING))
         except Exception as e:
             print(f"{repr(e)} in Server._send_loop")
+    
+    async def _recv(self):
+        try:
+            message = await self._stream.readuntil()
+            self._handle_message(message)
+        
+        except IncompleteReadError as e:
+            self._status("Server closed")
 
     async def _recv_loop(self):
         """
