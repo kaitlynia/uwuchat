@@ -167,7 +167,8 @@ class Server:
         self.message_entry.bind(SHIFT_RETURN, self._enter_key)
         self.message_entry.bind(RETURN_KEY, self._enter_message)
 
-        self._stream = None
+        self._reader = None
+        self._writer = None
         self._send_queue = asyncio.Queue()
         self._send_task = None
         self._recv_task = None
@@ -229,7 +230,8 @@ class Server:
         """
         try:
             while True:
-                await self._stream.write((await self._send_queue.get()).encode(ENCODING))
+                self._writer.write((await self._send_queue.get()).encode(ENCODING))
+                await self._writer.drain()
         except Exception as e:
             print(f"{repr(e)} in Server._send_loop")
 
@@ -238,11 +240,11 @@ class Server:
         Starts when `Server._recv_task` is run.
         """
         try:
-            message = await self._stream.readuntil()
+            message = await self._reader.readuntil()
             self._handle_message(message)
             self._recv_prefix = "\n"
             while True:
-                message = await self._stream.readuntil()
+                message = await self._reader.readuntil()
                 self._handle_message(message)
         except Exception as e:
             print(f"{repr(e)} in Server._recv_loop")
@@ -272,9 +274,9 @@ class Server:
         Currently, it does not attempt to resume operating after an exception occurs.
         """
         if all(not t or t.done() for t in (self._send_task, self._recv_task)) and\
-            not self._stream or self._stream.is_closing():
+            not self._writer or self._writer.is_closing():
             try:
-                self._stream = await asyncio.connect(self.host, self.port)
+                self._reader, self._writer = await asyncio.open_connection(self.host, self.port)
                 self._send_task = asyncio.create_task(self._send_loop())
                 self._recv_task = asyncio.create_task(self._recv_loop())
                 # TODO make a toggle menu for the server manager instead of showing + hiding it
