@@ -245,7 +245,6 @@ class Server:
         try:
             message = await self._stream.readuntil()
             self._handle_message(message)
-        
         except IncompleteReadError as e:
             self._status("Server closed")
 
@@ -254,12 +253,10 @@ class Server:
         Starts when `Server._recv_task` is run.
         """
         try:
-            message = await self._stream.readuntil()
-            self._handle_message(message)
+            await self._recv()
             self._recv_prefix = "\n"
             while True:
-                message = await self._stream.readuntil()
-                self._handle_message(message)
+                await self._recv()
         except Exception as e:
             print(f"{repr(e)} in Server._recv_loop")
 
