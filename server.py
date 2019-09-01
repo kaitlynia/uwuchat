@@ -5,22 +5,26 @@ streams = set()
 
 async def broadcast(message):
     for stream in streams:
-        await stream.write(message)
+        stream[1].write(message)
+        await stream[1].drain()
 
-async def on_connect(stream):
-    streams.add(stream)
+async def on_connect(reader, writer):
+    streams.add((reader, writer))
+    print("Client connected")
     try:
-        while not stream.is_closing():
-            await broadcast(await stream.readuntil())
+        while not reader.at_eof():
+            await broadcast(await reader.readline())
     except (ConnectionResetError, asyncio.exceptions.IncompleteReadError) as e:
         pass
-    streams.remove(stream)
+    print("Client disconnected")
+    streams.remove((reader, writer))
 
 async def main():
-    async with asyncio.StreamServer(on_connect, port=PORT) as server:
-        await server.serve_forever()
+    print("serving on port", PORT)
+    server = await asyncio.start_server(on_connect, port=PORT)
+    await server.serve_forever()
 
 try:
-    asyncio.run(main())
+    asyncio.get_event_loop().run_until_complete(main())
 except KeyboardInterrupt:
     pass
