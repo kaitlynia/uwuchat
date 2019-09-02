@@ -42,7 +42,7 @@ class App(Tk):
     app_config = {
         "bg": "#111",
         "padx": 10,
-        "pady": 8
+        "pady": 8,
     }
 
     label_config = {
@@ -163,7 +163,7 @@ class Server:
         self.chat_log = Text(**app.text_config)
         self.chat_log.bind(ANY_KEY, self._enter_key)
         self.chat_log.bind(RETURN_KEY, self._enter_message)
-        self.chat_log.tag_config("status", bg="#888")
+        self.chat_log.tag_config("status", foreground="grey")
 
         self.message_entry = Text(**app.text_entry_config, height=3)
         self.message_entry.bind(SHIFT_RETURN, self._enter_key)
@@ -240,13 +240,13 @@ class Server:
                 await self._stream.write((await self._send_queue.get()).encode(ENCODING))
         except Exception as e:
             print(f"{repr(e)} in Server._send_loop")
-    
+
     async def _recv(self):
         try:
             message = await self._stream.readuntil()
             self._handle_message(message)
-        except IncompleteReadError as e:
-            self._status("Server closed")
+        except (IncompleteReadError, ConnectionResetError):
+            self._status("\nServer closed")
 
     async def _recv_loop(self):
         """
