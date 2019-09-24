@@ -1,23 +1,30 @@
 import asyncio
+import configparser
+import sqlite3
+from asyncio.exceptions import *
 
-PORT = 8888
-streams = set()
+config = configparser.ConfigParser()
+config.read("server.conf")
+
+db = sqlite3.connect("server.db")
+
+streams = []
 
 async def broadcast(message):
-    for stream in streams:
-        await stream.write(message)
+    await asyncio.gather(*(stream.write(message) for stream in streams))
 
 async def on_connect(stream):
-    streams.add(stream)
+    streams.append(stream)
     try:
         while not stream.is_closing():
             await broadcast(await stream.readuntil())
-    except (ConnectionResetError, asyncio.exceptions.IncompleteReadError) as e:
-        pass
+    except (ConnectionResetError, IncompleteReadError) as e:
+        print(stream, "RESULTED IN", e)
     streams.remove(stream)
 
 async def main():
-    async with asyncio.StreamServer(on_connect, port=PORT) as server:
+    port = config.get("server", "port")
+    async with asyncio.StreamServer(on_connect, port=port) as server:
         await server.serve_forever()
 
 try:
