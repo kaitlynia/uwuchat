@@ -16,13 +16,15 @@ class App(tk.Tk):
         # init Tcl + Toplevel widget
         super().__init__()
 
-        # TODO : move this to some place cleaner
-        self.user = None
-        self.config = None
-
-        # running state + config + how fast Tcl can update
+        # running state + how fast Tcl can update + config
         self.running = False
         self.tcl_timeout = 0.001
+        # TODO : show user that the config file does not exist
+        self.config, self.configured = configtool.read("client", {
+            "default-user": "anon",
+            "default-server": "localhost"
+        })
+        self.user = self.config.get("client", "default-user")
 
         # asyncio items, assigned when App.run() is executed
         self.loop: asyncio.AbstractEventLoop = None
@@ -134,13 +136,7 @@ class App(tk.Tk):
         self.inbox = asyncio.Queue()
         self.outbox = asyncio.Queue()
 
-        # read client config and create the network task
-        # TODO : show user that the config file does not exist
-        self.config, ok = configtool.read("client", {
-            "default-user": "anon",
-            "default-server": "localhost"
-        })
-        self.user = self.config.get("client", "default-user")
+        # use client config to create the network task
         server = self.config.get("client", "default-server").split(":")
         host, port = server[0], int(server[1]) if 1 in server else self.DEFAULT_PORT
         self.net_task = asyncio.create_task(self.net(host, port))

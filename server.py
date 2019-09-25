@@ -6,7 +6,7 @@ import configtool
 # import sqlite3
 
 # TODO : show user that the config file does not exist
-config, ok = configtool.read("server", {
+config, configured = configtool.read("server", {
     "port": "8888"
 })
 
