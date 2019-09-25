@@ -134,7 +134,7 @@ class App(tk.Tk):
 
         # read the host and port from "client.conf" and create the network task
         self.config.read("client.conf")
-        self.name = self.config.get("client", "default-name")
+        self.user = self.config.get("client", "default-name")
         server = self.config.get("client", "default-server").split(":")
         host, port = server[0], int(server[1]) if 1 in server else self.DEFAULT_PORT
         self.net_task = asyncio.create_task(self.net(host, port))
