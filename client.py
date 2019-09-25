@@ -1,7 +1,8 @@
 import asyncio
-import configparser
-import tkinter as tk
 import asyncio.exceptions as async_exc
+import tkinter as tk
+
+import configtool
 
 
 class App(tk.Tk):
@@ -15,11 +16,12 @@ class App(tk.Tk):
         # init Tcl + Toplevel widget
         super().__init__()
 
+        # TODO : move this to some place cleaner
+        self.user = None
+        self.config = None
+
         # running state + config + how fast Tcl can update
         self.running = False
-        self.config = configparser.ConfigParser()
-        # TODO : move this to some place cleaner
-        self.user = "anon"
         self.tcl_timeout = 0.001
 
         # asyncio items, assigned when App.run() is executed
@@ -132,9 +134,13 @@ class App(tk.Tk):
         self.inbox = asyncio.Queue()
         self.outbox = asyncio.Queue()
 
-        # read the host and port from "client.conf" and create the network task
-        self.config.read("client.conf")
-        self.user = self.config.get("client", "default-name")
+        # read client config and create the network task
+        # TODO : show user that the config file does not exist
+        self.config, ok = configtool.read("client", {
+            "default-user": "anon",
+            "default-server": "localhost"
+        })
+        self.user = self.config.get("client", "default-user")
         server = self.config.get("client", "default-server").split(":")
         host, port = server[0], int(server[1]) if 1 in server else self.DEFAULT_PORT
         self.net_task = asyncio.create_task(self.net(host, port))

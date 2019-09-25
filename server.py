@@ -1,12 +1,16 @@
 import asyncio
-import configparser
-import sqlite3
 import asyncio.exceptions as async_exc
 
-config = configparser.ConfigParser()
-config.read("server.conf")
+import configtool
 
-db = sqlite3.connect("server.db")
+# import sqlite3
+
+# TODO : show user that the config file does not exist
+config, ok = configtool.read("server", {
+    "port": "8888"
+})
+
+# db = sqlite3.connect("server.db")
 
 streams = []
 
