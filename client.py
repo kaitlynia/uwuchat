@@ -1,7 +1,7 @@
 import asyncio
 import configparser
 import tkinter as tk
-from asyncio.exceptions import *
+import asyncio.exceptions as async_exc
 
 
 class App(tk.Tk):

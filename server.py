@@ -1,7 +1,7 @@
 import asyncio
 import configparser
 import sqlite3
-from asyncio.exceptions import *
+import asyncio.exceptions as async_exc
 
 config = configparser.ConfigParser()
 config.read("server.conf")
@@ -18,7 +18,7 @@ async def on_connect(stream):
     try:
         while not stream.is_closing():
             await broadcast(await stream.readuntil())
-    except (ConnectionResetError, IncompleteReadError) as e:
+    except (ConnectionResetError, async_exc.IncompleteReadError) as e:
         print(stream, "RESULTED IN", e)
     streams.remove(stream)
 
