@@ -6,9 +6,9 @@ import configtool
 # import sqlite3
 
 # TODO : show user that the config file does not exist
-config, configured = configtool.read("server", {
-    "port": "8888"
-})
+config, configured = configtool.read("server",
+    port = "8888"
+)
 
 # db = sqlite3.connect("server.db")
 

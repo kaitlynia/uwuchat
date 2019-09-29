@@ -1,7 +1,7 @@
 import configparser
 
 
-def read(name: str, options: dict):
+def read(name: str, **options):
     config = configparser.ConfigParser()
     try:
         if not config.read(f"{name}.conf"):

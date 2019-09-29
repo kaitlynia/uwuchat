@@ -20,10 +20,10 @@ class App(tk.Tk):
         self.running = False
         self.tcl_timeout = 0.001
         # TODO : show user that the config file does not exist
-        self.config, self.configured = configtool.read("client", {
-            "default-user": "anon",
-            "default-server": "localhost"
-        })
+        self.config, self.configured = configtool.read("client",
+            default_user = "anon",
+            default_server = "localhost"
+        )
         self.user = self.config.get("client", "default-user")
 
         # asyncio items, assigned when App.run() is executed
@@ -37,14 +37,16 @@ class App(tk.Tk):
         self.width = 40
 
         # tkinter widgets
-        self.messages = tk.Listbox(master=self, cnf={
-            "width": self.width + 13,
-            "height": 12
-        })
-        self.entry = tk.Text(master=self, cnf={
-            "width": self.width,
-            "height": 3
-        })
+        self.messages = tk.Listbox(
+            master = self,
+            width = self.width + 13,
+            height = 12
+        )
+        self.entry = tk.Text(
+            master = self,
+            width = self.width,
+            height = 3
+        )
         self.entry.bind("<Return>", self._entry_binding)
 
     def show(self):
