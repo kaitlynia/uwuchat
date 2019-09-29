@@ -5,33 +5,35 @@ import configtool
 
 # import sqlite3
 
-# TODO : show user that the config file does not exist
-config, configured = configtool.read("server",
-    port = "8888"
-)
-
 # db = sqlite3.connect("server.db")
 
-streams = []
+class Server:
+    def __init__(self):
+        self.config, self.configured = configtool.read("server",
+            port = "8888"
+        )
+        self.port = self.config.get("server", "port")
+        self.streams = []
 
-async def broadcast(message):
-    await asyncio.gather(*(stream.write(message) for stream in streams))
+    async def broadcast(self, message):
+        await asyncio.gather(*(stream.write(message) for stream in self.streams))
 
-async def on_connect(stream):
-    streams.append(stream)
-    try:
-        while not stream.is_closing():
-            await broadcast(await stream.readuntil())
-    except (ConnectionResetError, async_exc.IncompleteReadError) as e:
-        print(stream, "RESULTED IN", e)
-    streams.remove(stream)
+    async def on_connect(self, stream):
+        self.streams.append(stream)
+        try:
+            while not stream.is_closing():
+                await self.broadcast(await stream.readuntil())
+        except (ConnectionResetError, async_exc.IncompleteReadError) as e:
+            print(stream, "RESULTED IN", e)
+        self.streams.remove(stream)
 
-async def main():
-    port = config.get("server", "port")
-    async with asyncio.StreamServer(on_connect, port=port) as server:
-        await server.serve_forever()
+    async def run(self):
+        async with asyncio.StreamServer(self.on_connect, port=self.port) as ss:
+            await ss.serve_forever()
+
+server = Server()
 
 try:
-    asyncio.run(main())
+    asyncio.run(server.run())
 except KeyboardInterrupt:
     pass
