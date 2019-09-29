@@ -1,13 +1,9 @@
-import configparser
+import json
 
 
-def read(name: str, **options):
-    config = configparser.ConfigParser()
+def read(name: str, defaults: dict):
     try:
-        if not config.read(f"{name}.conf"):
-            raise configparser.Error
-        return config, True
-    except configparser.Error:
-        # TODO : just generate the file and put defaults there
-        config.read_dict({name: options})
-        return config, False
+        with open(f"{name}.json") as f:
+            return json.load(f)
+    except (FileNotFoundError, OSError, json.JSONDecodeError):
+        return defaults.copy()

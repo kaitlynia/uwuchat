@@ -10,7 +10,11 @@ class Client(tk.Tk):
     Simple uwuchat client implementation.
     '''
 
-    DEFAULT_PORT = 8888
+    defaults = {
+        "server": "localhost",
+        "port": 8888,
+        "user": "anon"
+    }
 
     def __init__(self):
         # init Tcl + Toplevel widget
@@ -20,11 +24,7 @@ class Client(tk.Tk):
         self.running = False
         self.tcl_timeout = 0.001
         # TODO : show user that the config file does not exist
-        self.config, self.configured = configtool.read("client",
-            default_user = "anon",
-            default_server = "localhost"
-        )
-        self.user = self.config.get("client", "default_user")
+        self.config = configtool.read("client", self.defaults)
 
         # asyncio items, assigned when Client.run() is executed
         self.loop: asyncio.AbstractEventLoop = None
@@ -62,7 +62,7 @@ class Client(tk.Tk):
         '''
         message = self.entry.get("1.0", "end").strip()
         if message != "":
-            self.outbox.put_nowait(f"{self.user}: {message}\n")
+            self.outbox.put_nowait(f"{self.config['user']}: {message}\n")
         self.after_idle(self.entry.delete, "1.0", "end")
 
     async def net(self, host, port):
@@ -139,8 +139,8 @@ class Client(tk.Tk):
         self.outbox = asyncio.Queue()
 
         # use client config to create the network task
-        server = self.config.get("client", "default_server").split(":")
-        host, port = server[0], int(server[1]) if 1 in server else self.DEFAULT_PORT
+        server = self.config["server"].split(":")
+        host, port = server[0], int(server[1]) if 1 in server else self.config["port"]
         self.net_task = asyncio.create_task(self.net(host, port))
 
         # just before updating Tcl, create the inbox task that handles incoming messages

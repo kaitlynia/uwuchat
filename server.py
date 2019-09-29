@@ -8,11 +8,13 @@ import configtool
 # db = sqlite3.connect("server.db")
 
 class Server:
+
+    defaults = {
+        "port": 8888
+    }
+
     def __init__(self):
-        self.config, self.configured = configtool.read("server",
-            port = "8888"
-        )
-        self.port = self.config.get("server", "port")
+        self.config = configtool.read("server", self.defaults)
         self.streams = []
 
     async def broadcast(self, message):
@@ -28,7 +30,8 @@ class Server:
         self.streams.remove(stream)
 
     async def start(self):
-        async with asyncio.StreamServer(self.on_connect, port=self.port) as ss:
+        port = self.config["port"]
+        async with asyncio.StreamServer(self.on_connect, port=port) as ss:
             await ss.serve_forever()
 
 server = Server()
