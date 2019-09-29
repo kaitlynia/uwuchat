@@ -27,13 +27,13 @@ class Server:
             print(stream, "RESULTED IN", e)
         self.streams.remove(stream)
 
-    async def run(self):
+    async def start(self):
         async with asyncio.StreamServer(self.on_connect, port=self.port) as ss:
             await ss.serve_forever()
 
 server = Server()
 
 try:
-    asyncio.run(server.run())
+    asyncio.run(server.start())
 except KeyboardInterrupt:
     pass

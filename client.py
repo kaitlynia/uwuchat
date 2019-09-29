@@ -122,9 +122,9 @@ class App(tk.Tk):
         '''
         self.running = False
 
-    async def run(self):
+    async def start(self):
         '''
-        Run the application. Sets up asyncio-related stuff and starts updating Tcl.
+        Start the application. Sets up asyncio-related stuff and starts updating Tcl.
         '''
 
         # state + tkinter config
@@ -152,4 +152,4 @@ class App(tk.Tk):
             await asyncio.sleep(self.tcl_timeout)
 
 app = App()
-asyncio.run(app.run())
+asyncio.run(app.start())
