@@ -8,5 +8,6 @@ def read(name: str, **options):
             raise configparser.Error
         return config, True
     except configparser.Error:
+        # TODO : just generate the file and put defaults there
         config.read_dict({name: options})
         return config, False
