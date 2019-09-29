@@ -5,7 +5,7 @@ import tkinter as tk
 import configtool
 
 
-class App(tk.Tk):
+class Client(tk.Tk):
     '''
     Simple uwuchat client implementation.
     '''
@@ -26,14 +26,14 @@ class App(tk.Tk):
         )
         self.user = self.config.get("client", "default_user")
 
-        # asyncio items, assigned when App.run() is executed
+        # asyncio items, assigned when Client.run() is executed
         self.loop: asyncio.AbstractEventLoop = None
         self.net_task: asyncio.Task = None
         self.inbox_task: asyncio.Task = None
         self.inbox: asyncio.Queue = None
         self.outbox: asyncio.Queue = None
 
-        # width of the whole application (in characters)
+        # width of the whole client (in characters)
         self.width = 40
 
         # tkinter widgets
@@ -51,14 +51,14 @@ class App(tk.Tk):
 
     def show(self):
         '''
-        Show the application's widgets.
+        Show the client's widgets.
         '''
         self.messages.pack()
         self.entry.pack()
 
     def _entry_binding(self, event):
         '''
-        Called when `<Return>` is pressed in the `App.entry` Text widget.
+        Called when `<Return>` is pressed in the `Client.entry` Text widget.
         '''
         message = self.entry.get("1.0", "end").strip()
         if message != "":
@@ -69,7 +69,7 @@ class App(tk.Tk):
         '''
         Connect to a `host` and `port` and start network logic.
 
-        This is called in `App.run()` so you shouldn't need to call this manually.
+        This is called in `Client.run()` so you shouldn't need to call this manually.
         '''
         while self.running:
             try:
@@ -79,29 +79,29 @@ class App(tk.Tk):
                         self._recv_loop(stream)
                     )
             except Exception as e:
-                print(f"\nException in App.net:\n{e}")
+                print(f"\nException in Client.net:\n{e}")
 
     async def _send_loop(self, stream):
         '''
-        Gets messages from `App.outbox` and sends messages to `stream`
+        Gets messages from `Client.outbox` and sends messages to `stream`
         '''
         while self.running:
             try:
                 message = await self.outbox.get()
                 await stream.write(message.encode())
             except Exception as e:
-                print(f"\nException in App.send_loop:\n{e}")
+                print(f"\nException in Client.send_loop:\n{e}")
 
     async def _recv_loop(self, stream):
         '''
-        Receives messages from `stream` and puts them in `App.inbox`
+        Receives messages from `stream` and puts them in `Client.inbox`
         '''
         while self.running:
             try:
                 message = await stream.readuntil()
                 self.inbox.put_nowait(message)
             except Exception as e:
-                print(f"\nException in App.recv_loop:\n{e}")
+                print(f"\nException in Client.recv_loop:\n{e}")
 
     async def _inbox_loop(self):
         '''
@@ -114,24 +114,24 @@ class App(tk.Tk):
                 self.messages.insert("end", message.decode())
                 self.messages.see("end")
             except Exception as e:
-                print(f"\nException in App.inbox_loop:\n{e}")
+                print(f"\nException in Client.inbox_loop:\n{e}")
 
     def stop(self):
         '''
-        Signal for App.run() to finish, sanely stopping the event loop.
+        Signal for Client.start() to finish, sanely stopping the event loop.
         '''
         self.running = False
 
     async def start(self):
         '''
-        Start the application. Sets up asyncio-related stuff and starts updating Tcl.
+        Start the client. Sets up asyncio-related stuff and starts updating Tcl.
         '''
 
         # state + tkinter config
         self.running = True
-        app.protocol("WM_DELETE_WINDOW", self.stop)
-        app.wm_title("uwuchat")
-        app.show()
+        self.protocol("WM_DELETE_WINDOW", self.stop)
+        self.wm_title("uwuchat")
+        self.show()
 
         # asyncio stuff
         self.loop = asyncio.get_running_loop()
@@ -146,10 +146,10 @@ class App(tk.Tk):
         # just before updating Tcl, create the inbox task that handles incoming messages
         self.inbox_task = asyncio.create_task(self._inbox_loop())
 
-        # update Tcl until application is closed
+        # update Tcl until client is closed
         while self.running:
             self.update()
             await asyncio.sleep(self.tcl_timeout)
 
-app = App()
-asyncio.run(app.start())
+client = Client()
+asyncio.run(client.start())
