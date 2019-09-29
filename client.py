@@ -24,7 +24,7 @@ class App(tk.Tk):
             default_user = "anon",
             default_server = "localhost"
         )
-        self.user = self.config.get("client", "default-user")
+        self.user = self.config.get("client", "default_user")
 
         # asyncio items, assigned when App.run() is executed
         self.loop: asyncio.AbstractEventLoop = None
@@ -139,7 +139,7 @@ class App(tk.Tk):
         self.outbox = asyncio.Queue()
 
         # use client config to create the network task
-        server = self.config.get("client", "default-server").split(":")
+        server = self.config.get("client", "default_server").split(":")
         host, port = server[0], int(server[1]) if 1 in server else self.DEFAULT_PORT
         self.net_task = asyncio.create_task(self.net(host, port))
 
