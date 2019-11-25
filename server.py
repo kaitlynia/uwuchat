@@ -2,7 +2,6 @@ import asyncio
 
 import uwuspec
 
-
 # hex(PORT) == '0xcafe'!
 port = 51966
 last_id = 0
