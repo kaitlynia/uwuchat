@@ -43,7 +43,8 @@ async def on_connect(
     stream = uwuspec.Stream(reader, writer)
 
     # ignore this Stream if it doesn't say Hello first
-    if (await stream.read_stanza()).variant is not uwuspec.Variant.Hello:
+    stanza = await stream.read_stanza()
+    if stanza is None or stanza.variant is not uwuspec.Variant.Hello:
         return
 
     # throw this boy in the streamerator
