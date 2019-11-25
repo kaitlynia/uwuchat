@@ -2,6 +2,7 @@ import asyncio
 
 import uwuspec
 
+host = "0.0.0.0"
 # hex(PORT) == '0xcafe'!
 port = 51966
 last_id = 0
@@ -72,7 +73,7 @@ async def on_connect(
 
 async def main():
     # create server
-    server: asyncio.AbstractServer = await asyncio.start_server(on_connect, port=port)
+    server: asyncio.AbstractServer = await asyncio.start_server(on_connect, host=host, port=port)
     async with server:
         try:
             # start serving
