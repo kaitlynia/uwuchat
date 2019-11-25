@@ -46,6 +46,7 @@ async def on_connect(
     stanza = await stream.read_stanza()
     if stanza is None or stanza.variant is not uwuspec.Variant.Hello:
         return
+    print(f"Hello, {writer.get_extra_info('socket')}")
 
     # throw this boy in the streamerator
     global last_id
