@@ -1,9 +1,12 @@
-from tkinter import *
 import asyncio
-from asyncio.exceptions import *
 import os
+from asyncio.exceptions import *
+from tkinter import *
+
+import uwuspec
 
 
+# TODO : maybe make this a bit cleaner? move to core??
 # Constants
 START = "1.0"
 DELIMITER = "\n"
@@ -20,7 +23,7 @@ MENTION_SOUND = "sounds/mention.wav"
 
 
 # Determine if notification sounds can be played
-# TODO cross-platform
+# TODO cross-platform but yeah probably not
 on_windows = os.name == 'nt'
 if on_windows:
     import winsound
@@ -111,6 +114,7 @@ class ServerManager:
         host = self.server_entry.get(START, END).strip()
         if name != "" and host != "":
             self._connect_queue.put_nowait((name, host))
+        return "break"
 
     async def _connect_loop(self):
         """
@@ -169,7 +173,7 @@ class Server:
         self.message_entry.bind(SHIFT_RETURN, self._enter_key)
         self.message_entry.bind(RETURN_KEY, self._enter_message)
 
-        self._stream = None
+        self._stream: uwuspec.Stream
         self._send_queue = asyncio.Queue()
         self._send_task = None
         self._recv_task = None
@@ -190,8 +194,13 @@ class Server:
         """
         message = self.message_entry.get(START, END).strip()
         if message:
-            self._send_queue.put_nowait(f"{self.name}: {message}\n")
+            self._send_queue.put_nowait(uwuspec.Stanza({
+                "to": "@all",
+                "from": self.name,
+                "body": message
+            }))
         self.app.after_idle(self.message_entry.delete, START, END)
+        return "break"
 
     def _status(self, message):
         self.chat_log.config(state=NORMAL)
@@ -199,7 +208,7 @@ class Server:
         self.chat_log.config(state=DISABLED)
         self.chat_log.see(END)
 
-    def _handle_message(self, message):
+    def _handle_stanza(self, stanza: uwuspec.Stanza):
         """
         Takes a message and (in the future) produces a JSON object (or stanza).
 
@@ -209,14 +218,14 @@ class Server:
         JSON data model is not implemented yet, so it inserts the entire message.
         """
         # TODO actually parse messages
-        stanza = f"{self._recv_prefix}{message.strip().decode(ENCODING)}"
-        self.chat_log.config(state=NORMAL)
-        self.chat_log.insert(END, stanza)
-        self.chat_log.config(state=DISABLED)
-        self.chat_log.see(END)
+        if stanza.variant is uwuspec.Variant.Message:
+            self.chat_log.config(state=NORMAL)
+            self.chat_log.insert(END, f"{stanza['from']}: {stanza['body']}")
+            self.chat_log.config(state=DISABLED)
+            self.chat_log.see(END)
 
-        if self.notify and on_windows:
-            self._do_notification(stanza)
+            if self.notify and on_windows:
+                self._do_notification(stanza)
 
     def _do_notification(self, stanza):
         """
@@ -225,7 +234,7 @@ class Server:
         Currently Windows-only.
         """
         if self.app.focus_get() is None:
-            sound = MENTION_SOUND if self._mention in stanza else MESSAGE_SOUND
+            sound = MENTION_SOUND if self._mention in stanza["body"] else MESSAGE_SOUND
             winsound.PlaySound(sound,
             winsound.SND_FILENAME |
             winsound.SND_ASYNC |
@@ -237,14 +246,16 @@ class Server:
         """
         try:
             while True:
-                await self._stream.write((await self._send_queue.get()).encode(ENCODING))
+                stanza: uwuspec.Stanza = await self._send_queue.get()
+                # TODO : see if loop.create_task is any better / worth it
+                await self._stream.write(stanza.data)
         except Exception as e:
             print(f"{repr(e)} in Server._send_loop")
 
     async def _recv(self):
         try:
-            message = await self._stream.readuntil()
-            self._handle_message(message)
+            stanza: uwuspec.Stanza = await self._stream.read_stanza()
+            self._handle_stanza(stanza)
         except (IncompleteReadError, ConnectionResetError):
             self._status("\nServer closed")
 
@@ -287,7 +298,7 @@ class Server:
         if all(not t or t.done() for t in (self._send_task, self._recv_task)) and\
             not self._stream or self._stream.is_closing():
             try:
-                self._stream = await asyncio.connect(self.host, self.port)
+                self._stream = uwuspec.Stream(*(await asyncio.open_connection(self.host, self.port)))
                 self._send_task = asyncio.create_task(self._send_loop())
                 self._recv_task = asyncio.create_task(self._recv_loop())
                 # TODO make a toggle menu for the server manager instead of showing + hiding it
@@ -303,10 +314,11 @@ async def launch_app(update_timeout=0.01):
     """
     Sets up the GUI and sleeps every `update_timeout` seconds to allow other tasks to run.
     """
+    loop = asyncio.get_running_loop()
     app = App()
 
-    app.protocol("WM_DELETE_WINDOW", asyncio.get_event_loop().stop)
-    app.wm_title("TkChat")
+    app.protocol("WM_DELETE_WINDOW", loop.stop)
+    app.wm_title("uwuchat")
 
     app.server_manager.show()
 
@@ -319,6 +331,7 @@ if __name__ == "__main__":
     try:
         # 🚀
         asyncio.run(launch_app())
+    # TODO : please for the love of fucking god make this less shitty
     except RuntimeError as e:
         # Ignore a specific exception raised during a normal exit
         if e.args[0] != "Event loop stopped before Future completed.":

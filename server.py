@@ -1,26 +1,84 @@
 import asyncio
 
-PORT = 8888
-streams = set()
+import uwuspec
 
-async def broadcast(message):
-    for stream in streams:
-        await stream.write(message)
 
-async def on_connect(stream):
-    streams.add(stream)
+# hex(PORT) == '0xcafe'!
+port = 51966
+last_id = 0
+all_streams = {}
+streamerator = all_streams.values()
+
+
+async def on_message(stream: uwuspec.Stream, stanza: uwuspec.Stanza):
+    loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+    for each_stream in streamerator:
+        loop.create_task(each_stream.write_stanza(stanza))
+
+async def on_error(stream: uwuspec.Stream, stanza: uwuspec.Stanza):
+    pass
+
+async def on_hello(stream: uwuspec.Stream, stanza: uwuspec.Stanza):
+    pass
+
+async def on_bye(stream: uwuspec.Stream, stanza: uwuspec.Stanza):
+    pass
+
+async def on_unknown(stream: uwuspec.Stream, stanza: uwuspec.Stanza):
+    pass
+
+events = {
+    uwuspec.Variant.Message: on_message,
+    uwuspec.Variant.Error: on_error,
+    uwuspec.Variant.Hello: on_hello,
+    uwuspec.Variant.Bye: on_bye,
+    uwuspec.Variant.Unknown: on_unknown
+}
+
+
+async def on_connect(
+    reader: asyncio.StreamReader,
+    writer: asyncio.StreamWriter):
+
+    loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+    stream = uwuspec.Stream(reader, writer)
+
+    # ignore this Stream if it doesn't say Hello first
+    if (await stream.read_stanza()).variant is not uwuspec.Variant.Hello:
+        return
+
+    # throw this boy in the streamerator
+    global last_id
+    last_id += 1
+    all_streams[last_id] = stream
+    stream_id = last_id
+
     try:
-        while not stream.is_closing():
-            await broadcast(await stream.readuntil())
+        while not reader.at_eof():
+            try:
+                stanza = await stream.read()
+                if stanza.variant is uwuspec.Variant.Bye:
+                    break
+                loop.create_task(events[stanza.variant](stream, stanza))
+            except uwuspec.StanzaDecodeError:
+                continue
     except (ConnectionResetError, asyncio.exceptions.IncompleteReadError) as e:
-        pass
-    streams.remove(stream)
+        print(e)
+
+    # cya
+    del all_streams[stream_id]
+
 
 async def main():
-    async with asyncio.StreamServer(on_connect, port=PORT) as server:
-        await server.serve_forever()
+    # create server
+    server: asyncio.AbstractServer = asyncio.start_server(on_connect, port=PORT)
+    async with server:
+        try:
+            # start serving
+            await server.serve_forever()
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            # if CancelledError is propagated or the program is interrupted, leave context manager
+            pass
 
-try:
-    asyncio.run(main())
-except KeyboardInterrupt:
-    pass
+
+asyncio.run(main())
