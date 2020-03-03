@@ -1,6 +1,7 @@
 import asyncio
 import asyncio.exceptions as async_exc
 import tkinter as tk
+from traceback import print_exc
 
 import configtool
 
@@ -78,8 +79,8 @@ class Client(tk.Tk):
                     self._recv_loop(reader),
                     self._send_loop(writer)
                 )
-            except Exception as e:
-                print(f"\nException in Client.net:\n{e}")
+            except:
+                print_exc()
 
     async def _recv_loop(self, reader: asyncio.StreamReader):
         '''
@@ -89,8 +90,8 @@ class Client(tk.Tk):
             try:
                 message = await reader.readuntil()
                 self.loop.create_task(self.process_message(message))
-            except Exception as e:
-                print(f"\nException in Client.recv_loop:\n{e}")
+            except:
+                print_exc()
 
     async def _send_loop(self, writer: asyncio.StreamWriter):
         '''
@@ -101,8 +102,8 @@ class Client(tk.Tk):
                 message = await self.outbox.get()
                 writer.write(message.encode())
                 self.loop.create_task(writer.drain())
-            except Exception as e:
-                print(f"\nException in Client.send_loop:\n{e}")
+            except:
+                print_exc()
 
     async def process_message(self, message: bytes):
         '''
@@ -113,8 +114,8 @@ class Client(tk.Tk):
             # TODO : this is pretty naive, need to implement filters
             self.messages.insert("end", message.decode())
             self.messages.see("end")
-        except Exception as e:
-            print(f"\nException in Client.process_message:\n{e}")
+        except:
+            print_exc()
 
     def stop(self):
         '''

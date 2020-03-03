@@ -1,5 +1,6 @@
 import asyncio
 import asyncio.exceptions as async_exc
+from traceback import print_exc
 
 import configtool
 
@@ -34,8 +35,9 @@ class Server:
             while not writer.is_closing():
                 message = await reader.readuntil(b'\n')
                 self.loop.create_task(self.broadcast(message))
-        except (ConnectionResetError, async_exc.IncompleteReadError) as e:
-            print(reader, "RESULTED IN", e)
+        # except (ConnectionResetError, async_exc.IncompleteReadError) as e:
+        except:
+            print_exc()
         self.readers.remove(reader)
         self.writers.remove(writer)
 
