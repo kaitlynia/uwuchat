@@ -29,8 +29,7 @@ class Client(tk.Tk):
         # asyncio items, assigned when Client.run() is executed
         self.loop: asyncio.AbstractEventLoop = None
         self.net_task: asyncio.Task = None
-        self.inbox_task: asyncio.Task = None
-        self.inbox: asyncio.Queue = None
+        self.writers = []
         self.outbox: asyncio.Queue = None
 
         # width of the whole client (in characters)
@@ -73,48 +72,49 @@ class Client(tk.Tk):
         '''
         while self.running:
             try:
-                async with asyncio.connect(host, port) as stream:
-                    await asyncio.gather(
-                        self._send_loop(stream),
-                        self._recv_loop(stream)
-                    )
+                reader, writer = await asyncio.open_connection(host, port)
+                self.writers.append(writer)
+                await asyncio.gather(
+                    self._recv_loop(reader),
+                    self._send_loop(writer)
+                )
             except Exception as e:
                 print(f"\nException in Client.net:\n{e}")
 
-    async def _send_loop(self, stream):
+    async def _recv_loop(self, reader: asyncio.StreamReader):
         '''
-        Gets messages from `Client.outbox` and sends messages to `stream`
+        Receives messages from `reader` and puts them in `Client.inbox`
+        '''
+        while self.running:
+            try:
+                message = await reader.readuntil()
+                self.loop.create_task(self.process_message(message))
+            except Exception as e:
+                print(f"\nException in Client.recv_loop:\n{e}")
+
+    async def _send_loop(self, writer: asyncio.StreamWriter):
+        '''
+        Gets messages from `Client.outbox` and sends messages to `writer`
         '''
         while self.running:
             try:
                 message = await self.outbox.get()
-                await stream.write(message.encode())
+                writer.write(message.encode())
+                self.loop.create_task(writer.drain())
             except Exception as e:
                 print(f"\nException in Client.send_loop:\n{e}")
 
-    async def _recv_loop(self, stream):
+    async def process_message(self, message: bytes):
         '''
-        Receives messages from `stream` and puts them in `Client.inbox`
+        Processes messages.
         '''
-        while self.running:
-            try:
-                message = await stream.readuntil()
-                self.inbox.put_nowait(message)
-            except Exception as e:
-                print(f"\nException in Client.recv_loop:\n{e}")
-
-    async def _inbox_loop(self):
-        '''
-        Monitors the inbox and processes messages.
-        '''
-        while self.running:
-            try:
-                message = await self.inbox.get()
-                # TODO : this is pretty naive, need to implement filters
-                self.messages.insert("end", message.decode())
-                self.messages.see("end")
-            except Exception as e:
-                print(f"\nException in Client.inbox_loop:\n{e}")
+        try:
+            # This method is only async so that additional network I/O could be started here as needed
+            # TODO : this is pretty naive, need to implement filters
+            self.messages.insert("end", message.decode())
+            self.messages.see("end")
+        except Exception as e:
+            print(f"\nException in Client.process_message:\n{e}")
 
     def stop(self):
         '''
@@ -122,7 +122,7 @@ class Client(tk.Tk):
         '''
         self.running = False
 
-    async def start(self):
+    async def _async_run(self):
         '''
         Start the client. Sets up asyncio-related stuff and starts updating Tcl.
         '''
@@ -135,7 +135,6 @@ class Client(tk.Tk):
 
         # asyncio stuff
         self.loop = asyncio.get_running_loop()
-        self.inbox = asyncio.Queue()
         self.outbox = asyncio.Queue()
 
         # use client config to create the network task
@@ -143,13 +142,21 @@ class Client(tk.Tk):
         host, port = server[0], int(server[1]) if 1 in server else self.config["port"]
         self.net_task = asyncio.create_task(self.net(host, port))
 
-        # just before updating Tcl, create the inbox task that handles incoming messages
-        self.inbox_task = asyncio.create_task(self._inbox_loop())
-
         # update Tcl until client is closed
+        # sleep is ordered first so that the UI is only drawn after a connection is established
         while self.running:
-            self.update()
             await asyncio.sleep(self.tcl_timeout)
+            self.update()
+
+        # cleanup before exit
+        for writer in self.writers:
+            writer.close()
+
+        await asyncio.gather(*(writer.wait_closed() for writer in self.writers))
+
+    def run(self):
+        asyncio.run(self._async_run())
+
 
 client = Client()
-asyncio.run(client.start())
+client.run()
