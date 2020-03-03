@@ -14,4 +14,10 @@ A chat application written in Python with tkinter
 
 ### Installation
 
-Python **3.8** is required.
+[Python 3.8](https://www.python.org/downloads/) is required to run both the client and the server application.
+
+Once it is installed, you can run the client by entering `py client.py` in Command Prompt on Windows
+or `python3 client.py` in a Linux terminal.
+
+The server can be run the same way. You can also specify a `client.json` file where `client.py` resides and you can
+customize some of the options the client uses. An example is provided in `example-client.json`
