@@ -10,6 +10,8 @@ import configtool
 
 class Server:
 
+    MESSAGE_DELIMITER = b'\n'
+
     defaults = {
         "port": 8888
     }
@@ -18,7 +20,7 @@ class Server:
         self.loop: asyncio.AbstractEventLoop = None # assigned in _async_run
         self.server: asyncio.AbstractServer = None  # assigned in _async_run
 
-        self.config = configtool.read("server", Server.defaults)
+        self.config = configtool.read("server.json", Server.defaults)
         self.readers = []
         self.writers = []
 
@@ -33,7 +35,7 @@ class Server:
         self.writers.append(writer)
         try:
             while not writer.is_closing():
-                message = await reader.readuntil(b'\n')
+                message = await reader.readuntil(Server.MESSAGE_DELIMITER)
                 self.loop.create_task(self.broadcast(message))
         # except (ConnectionResetError, async_exc.IncompleteReadError) as e:
         except:
