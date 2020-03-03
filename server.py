@@ -43,6 +43,7 @@ class Server:
                 self.loop.create_task(self.broadcast(message))
             except async_exc.IncompleteReadError:
                 print(f"(-) {peername} disconnected")
+                break
         # except (ConnectionResetError, async_exc.IncompleteReadError) as e:
             except:
                 print_exc()
