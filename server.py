@@ -14,29 +14,42 @@ class Server:
     }
 
     def __init__(self):
-        self.config = configtool.read("server", self.defaults)
-        self.streams = []
+        self.loop: asyncio.AbstractEventLoop = None # assigned in _async_run
+        self.server: asyncio.AbstractServer = None  # assigned in _async_run
+
+        self.config = configtool.read("server", Server.defaults)
+        self.readers = []
+        self.writers = []
 
     async def broadcast(self, message):
-        await asyncio.gather(*(stream.write(message) for stream in self.streams))
+        for writer in self.writers:
+            writer.write(message)
 
-    async def on_connect(self, stream):
-        self.streams.append(stream)
+        await asyncio.gather(*(writer.drain() for writer in self.writers))
+
+    async def on_connect(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self.readers.append(reader)
+        self.writers.append(writer)
         try:
-            while not stream.is_closing():
-                await self.broadcast(await stream.readuntil())
+            while not writer.is_closing():
+                message = await reader.readuntil(b'\n')
+                self.loop.create_task(self.broadcast(message))
         except (ConnectionResetError, async_exc.IncompleteReadError) as e:
-            print(stream, "RESULTED IN", e)
-        self.streams.remove(stream)
+            print(reader, "RESULTED IN", e)
+        self.streams.remove(reader)
+        self.streams.remove(writer)
 
-    async def start(self):
-        port = self.config["port"]
-        async with asyncio.StreamServer(self.on_connect, port=port) as ss:
-            await ss.serve_forever()
+    async def _async_run(self):
+        self.loop = asyncio.get_running_loop()
+        self.server = await asyncio.start_server(self.on_connect, port=self.config["port"])
+        await self.server.serve_forever()
+
+    def run(self):
+        asyncio.run(self._async_run())
 
 server = Server()
 
 try:
-    asyncio.run(server.start())
+    server.run()
 except KeyboardInterrupt:
     pass
