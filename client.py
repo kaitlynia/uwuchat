@@ -119,7 +119,7 @@ class Client(tk.Tk):
                 while not (self.reader.at_eof() or self.writer.is_closing()):
                     message = await self.recv()
                     # TODO : this is pretty naive, need to implement filters
-                    self.log(message.decode())
+                    self.log(message.decode()[:-1])
 
                 self.log("[error] server connection closed")
                 self.writer.close()
