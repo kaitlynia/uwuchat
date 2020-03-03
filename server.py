@@ -40,6 +40,7 @@ class Server:
         while not writer.is_closing():
             try:
                 message = await reader.readuntil(Server.MESSAGE_DELIMITER)
+                print(f"[#] {peername}: {message}")
                 self.loop.create_task(self.broadcast(message))
             except async_exc.IncompleteReadError:
                 print(f"(-) {peername} disconnected")
