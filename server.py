@@ -31,21 +31,29 @@ class Server:
         await asyncio.gather(*(writer.drain() for writer in self.writers))
 
     async def on_connect(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        peername = writer.get_extra_info('peername')
+        print(f"[+] {peername} connected")
+
         self.readers.append(reader)
         self.writers.append(writer)
-        try:
-            while not writer.is_closing():
+
+        while not writer.is_closing():
+            try:
                 message = await reader.readuntil(Server.MESSAGE_DELIMITER)
                 self.loop.create_task(self.broadcast(message))
+            except async_exc.IncompleteReadError:
+                print(f"(-) {peername} disconnected")
         # except (ConnectionResetError, async_exc.IncompleteReadError) as e:
-        except:
-            print_exc()
+            except:
+                print_exc()
+
         self.readers.remove(reader)
         self.writers.remove(writer)
 
     async def _async_run(self):
         self.loop = asyncio.get_running_loop()
         self.server = await asyncio.start_server(self.on_connect, port=self.config["port"])
+
         await self.server.serve_forever()
 
     def run(self):
