@@ -1,3 +1,4 @@
+#!/usr/bin/python -u
 import asyncio
 import asyncio.exceptions as async_exc
 from traceback import print_exc
