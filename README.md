@@ -14,7 +14,4 @@ A chat application written in Python with tkinter
 
 ### Installation
 
-Python **3.8+** is required.
-
-While Python 3.8 is still in beta, download this release:
-https://www.python.org/downloads/release/python-380b3/
+Python **3.8** is required.
