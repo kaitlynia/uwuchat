@@ -36,8 +36,8 @@ class Server:
                 self.loop.create_task(self.broadcast(message))
         except (ConnectionResetError, async_exc.IncompleteReadError) as e:
             print(reader, "RESULTED IN", e)
-        self.streams.remove(reader)
-        self.streams.remove(writer)
+        self.readers.remove(reader)
+        self.writers.remove(writer)
 
     async def _async_run(self):
         self.loop = asyncio.get_running_loop()
