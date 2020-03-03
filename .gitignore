@@ -1,5 +1,5 @@
-client.conf
-server.conf
+client.json
+server.json
 server.db
 __pycache__/
 *.py[cod]
