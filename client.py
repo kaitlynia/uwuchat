@@ -125,7 +125,7 @@ class Client(tk.Tk):
                 self.writer.close()
 
         except asyncio.CancelledError:
-            self.log("[info] quitting....")
+            self.log("[info] quitting...")
             if not self.writer.is_closing():
                 self.writer.close()
             await self.writer.wait_closed()
@@ -172,6 +172,6 @@ class Client(tk.Tk):
         '''
         asyncio.run(self._async_run())
 
-
-client = Client()
-client.run()
+if __name__ == "__main__":
+    client = Client()
+    client.run()
