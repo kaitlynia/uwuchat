@@ -14,7 +14,7 @@ class Client(tk.Tk):
     MESSAGE_DELIMITER = b'\n'
 
     defaults = {
-        "server": "localhost",
+        "host": "localhost",
         "port": 8888,
         "user": "anon"
     }
