@@ -26,7 +26,8 @@ class Client(tk.Tk):
         # how fast Tcl can update
         self.gui_timeout = 0.001
         # TODO : show user that the config file does not exist
-        self.config = configtool.read("client.json", Client.defaults)
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "client.json")
+        self.config = configtool.read(path, Client.defaults)
 
         # asyncio items, assigned when Client.run() is executed
         self.loop: asyncio.AbstractEventLoop = None
