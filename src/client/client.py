@@ -1,11 +1,7 @@
 import asyncio
 import asyncio.exceptions as async_exc
-import sys
 import tkinter as tk
-from os import path as os_path
 from traceback import print_exc
-
-from .. import configtool
 
 
 class Client(tk.Tk):
@@ -14,12 +10,6 @@ class Client(tk.Tk):
     '''
 
     MESSAGE_DELIMITER = b'\n'
-
-    defaults = {
-        "host": "localhost",
-        "port": 14815,
-        "user": "anon"
-    }
 
     def __init__(self, host='hazel.cafe', port=8888, name='anon'):
         # init Tcl + Toplevel widget
