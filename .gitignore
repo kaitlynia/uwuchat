@@ -1,5 +1,10 @@
-client.json
-server.json
-server.db
+# Untracked files
+/app.json
+
+# Python-generated files
 __pycache__/
-*.py[cod]
+
+# PyInstaller files
+/dist/
+/build/
+# /app.spec
