@@ -1,7 +1,15 @@
 import asyncio
 import asyncio.exceptions as async_exc
+import os
 import tkinter as tk
 from traceback import print_exc
+
+if os.name == 'nt':
+    import winsound
+    def playsound(filename: str):
+        winsound.PlaySound(filename, winsound.SND_ASYNC)
+else:
+    def playsound(*args, **kwargs): return
 
 
 class Client(tk.Tk):
@@ -19,6 +27,7 @@ class Client(tk.Tk):
         self.host = host
         self.port = port
         self.name = name
+        self.mention_str = f'@{name}'
 
         # how fast Tcl can update
         self.gui_timeout = 0.001
@@ -112,9 +121,15 @@ class Client(tk.Tk):
                 self.log("[info] connected")
 
                 while not (self.reader.at_eof() or self.writer.is_closing()):
-                    message = await self.recv()
+                    data = await self.recv()
                     # TODO : this is pretty naive, need to implement filters
-                    self.log(message.decode()[:-1])
+                    message = data.decode()[:-1]
+                    if self.focus_get() is None:
+                        if self.mention_str in message:
+                            playsound('./assets/mention.wav')
+                        else:
+                            playsound('./assets/message.wav')
+                    self.log(message)
 
                 self.log("[error] server connection closed")
                 self.writer.close()
