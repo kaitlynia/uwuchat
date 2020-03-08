@@ -3,25 +3,17 @@ import asyncio
 import asyncio.exceptions as async_exc
 from traceback import print_exc
 
-import configtool
-
-# import sqlite3
-
-# db = sqlite3.connect("server.db")
 
 class Server:
 
     MESSAGE_DELIMITER = b'\n'
 
-    defaults = {
-        "port": 14815
-    }
+    def __init__(self, port=8888):
+        self.port = port
 
-    def __init__(self):
         self.loop: asyncio.AbstractEventLoop = None # assigned in _async_run
         self.server: asyncio.AbstractServer = None  # assigned in _async_run
 
-        self.config = configtool.read("server.json", Server.defaults)
         self.readers = []
         self.writers = []
 
@@ -55,7 +47,7 @@ class Server:
 
     async def _async_run(self):
         self.loop = asyncio.get_running_loop()
-        self.server = await asyncio.start_server(self.on_connect, port=self.config["port"])
+        self.server = await asyncio.start_server(self.on_connect, port=self.port)
 
         await self.server.serve_forever()
 
