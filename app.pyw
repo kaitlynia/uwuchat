@@ -3,7 +3,7 @@ import json
 from src.client import Client
 
 try:
-    with open('client.json') as f:
+    with open('app.json') as f:
         __config = json.load(f)
 except FileNotFoundError:
     __config = {}
