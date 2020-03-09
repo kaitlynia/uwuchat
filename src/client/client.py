@@ -38,29 +38,70 @@ class Client(tk.Tk):
         self.reader: asyncio.StreamReader = None
         self.writer: asyncio.StreamWriter = None
 
-        # width of the whole client (in characters)
-        self.width = 40
+        # state + tkinter config
+        self.protocol("WM_DELETE_WINDOW", self.stop)
+        self.iconbitmap('./assets/client-icon.ico')
+        self.wm_title("uwuchat")
+        self.wm_state('zoomed')
+        self.wm_minsize(width=954, height=507)
+        self.bind('<Configure>', self._configure_binding)
+
+        width, height = self.winfo_width(), self.winfo_height()
+
+        # root style
+        self.config(
+            bg = '#202225'
+        )
+
+        # channels/participants, just some space for now
+        self.left_pane = tk.Frame(
+            bg = '#2F3136',
+            width = width // 6,
+            height = height
+        )
+        self.main_pane = tk.Frame(
+            bg = '#36393F',
+            width = width - width // 3,
+            height = height
+        )
+        self.right_pane = tk.Frame(
+            bg = '#2F3136',
+            width = width // 6,
+            height = height
+        )
 
         # tkinter widgets
-        self.messages = tk.Listbox(
-            master = self,
-            width = self.width + 13,
-            height = 12
+        self.messages = tk.Text(
+            master = self.main_pane,
+            state = 'disabled',
+            font = 'Consolas 12',
+            fg = 'white',
+            bg = '#36393F',
+            width = 100,
+            height = height // 18 - 8,
+            #borderwidth = 0
         )
         self.entry = tk.Text(
-            master = self,
-            width = self.width,
+            master = self.main_pane,
+            font = 'Consolas 12',
+            fg = 'white',
+            bg = '#40444B',
+            width = 71, # nearly 1:1 margins with side pane width
             height = 3
         )
         self.entry.bind("<Return>", self._entry_binding)
 
-    def pack_all(self):
+        self.messages.place(anchor='n', relx=0.5)
+        self.entry.place(anchor='s', relx=0.5, rely=0.975)
+
+    def place_all(self):
         '''
         Display the application's widgets.
         '''
-        self.messages.pack()
-        self.entry.pack()
-    
+        self.left_pane.place(anchor='nw')
+        self.main_pane.place(anchor='n', relx=0.5)
+        self.right_pane.place(anchor='ne', relx=1)
+
     async def send(self, data: bytes):
         '''
         Sends data to the server.
@@ -85,9 +126,15 @@ class Client(tk.Tk):
         
         Messages default as `important`, scrolling down to the new message.
         '''
-        self.messages.insert("end", message)
+        self.messages.config(state='normal')
+        self.messages.insert("end", message + '\n')
+        self.messages.config(state='disabled')
+
         if important:
             self.messages.see("end")
+
+    def _configure_binding(self, event):
+        pass#self.messages.config(height = self.winfo_height() / 19 - self.entry['height'] - 1)
 
     def _entry_binding(self, event):
         '''
@@ -153,11 +200,6 @@ class Client(tk.Tk):
         '''
         Sets up asyncio-related stuff and starts updating Tcl.
         '''
-
-        # state + tkinter config
-        self.protocol("WM_DELETE_WINDOW", self.stop)
-        self.wm_title("uwuchat")
-
         # asyncio stuff
         self.loop = asyncio.get_running_loop()
         self.outbox = asyncio.Queue()
@@ -166,7 +208,7 @@ class Client(tk.Tk):
         self.net_task = asyncio.create_task(self.net(self.host, self.port))
 
         # draw the GUI at least once so that info/errors can be posted to the messages Listbox
-        self.pack_all()
+        self.place_all()
         self.update()
 
         # update GUI until the net task is cancelled, use async wrapper to execute scheduled asyncio tasks first
